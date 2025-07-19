@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Engineer AI • Chat</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --accent: #00c2ff;
+      --text: #e0e0e0;
+      --bot-bg: #2a2a2a;
+      --user-bg: #004466;
+      --error: #ff6b6b;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 2rem;
+      font-size: 1.8rem;
+      color: var(--accent);
+      text-shadow: 0 0 4px #00c2ff88;
+    }
+
+    #chat-box {
+      background-color: var(--surface);
+      border-radius: 10px;
+      padding: 1rem;
+      margin: 2rem 0 1rem;
+      width: 90%;
+      max-width: 700px;
+      height: 500px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 8px;
+      max-width: 80%;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: var(--user-bg);
+      color: white;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: var(--bot-bg);
+    }
+
+    .loading {
+      font-style: italic;
+      color: gray;
+    }
+
+    #chat-form {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      width: 90%;
+      max-width: 700px;
+      margin-bottom: 2rem;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+      background-color: #2b2b2b;
+      color: white;
+    }
+
+    #user-input:focus {
+      outline: 2px solid var(--accent);
+    }
+
+    button {
+      background-color: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #00a2dd;
+    }
+
+    @media (max-width: 600px) {
+      #chat-box {
+        height: 400px;
+      }
+      #user-input {
+        font-size: 0.9rem;
+      }
+      button {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💬 Engineer AI</h1>
+
+  <div id="chat-box"></div>
+
+  <form id="chat-form">
+    <input type="text" id="user-input" placeholder="Type your message..." required autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("user-input");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      appendMessage("You", userMessage, "user");
+      input.value = "";
+      input.disabled = true;
+
+      const loadingMsg = appendMessage("Engineer AI", "Typing...", "bot loading");
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage })
+        });
+
+        const data = await response.json();
+        chatBox.removeChild(loadingMsg);
+
+        if (data.reply) {
+          appendMessage("Engineer AI", data.reply, "bot");
+        } else {
+          appendMessage("Engineer AI", "❌ Error: " + (data.error || "Unknown error"), "bot");
+        }
+      } catch (err) {
+        chatBox.removeChild(loadingMsg);
+        appendMessage("Engineer AI", "❌ Server error", "bot");
+      }
+
+      input.disabled = false;
+      input.focus();
+    });
+
+    function appendMessage(sender, text, className) {
+      const div = document.createElement("div");
+      div.className = `message ${className}`;
+      div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
+    }
+  </script>
+
+</body>
+</html>
